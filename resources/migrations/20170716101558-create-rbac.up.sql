@@ -1,6 +1,6 @@
 create table `user` (
 `id` int unsigned primary key auto_increment,
-`name` varchar(16) not null default '',
+`name` varchar(16) unique not null default '',
 `create_time` int unsigned not null
 );
 --;;
