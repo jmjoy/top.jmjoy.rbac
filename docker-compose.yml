@@ -1,0 +1,10 @@
+version: '2'
+
+services:
+  mysql:
+      image: mysql:5.6
+      environment:
+        - MYSQL_DATABASE=rbac
+        - MYSQL_ROOT_PASSWORD=root
+      ports:
+        - 12306:3306
