@@ -4,11 +4,15 @@
   :license {:name "MIT"
             :url "https://github.com/jmjoy/top.jmjoy.rbac/blob/master/LICENSE"}
   :dependencies [[org.clojure/clojure "1.8.0"]
+                 [org.clojure/tools.logging "0.4.0"]
                  [org.clojure/java.jdbc "0.7.0-beta5"]
                  [mysql/mysql-connector-java "5.1.41"]
                  [migratus "0.9.7"]
                  [korma "0.4.3"]
-                 [lein-dotenv "1.0.0"]]
+                 [lein-dotenv "1.0.0"]
+                 [spootnik/unilog "0.7.20"] ;; logging library
+                 ]
+  :main top.jmjoy.rbac.core
   :repl-options {:init-ns top.jmjoy.rbac.core}
   :plugins [[migratus-lein "0.5.0"]
             [lein-dotenv "1.0.0"]]
