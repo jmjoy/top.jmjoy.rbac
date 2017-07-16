@@ -1,15 +1,23 @@
 (ns top.jmjoy.rbac.core
-  (:require [migratus.core :as migratus]))
+  (:require [migratus.core :as migratus]
+            [clojure.java.jdbc :as jdbc]))
 
-(def ^:private db-config )
+(defn- get-jdbc-url []
+  (or (get (System/getenv) "RBAC_DATABASE_URL")
+      (throw (Exception. "Please specify RBAC_DATABASE_URL."))))
+
+(def ^:private jdbc-config
+  {:connection-uri (get-jdbc-url)})
+
+(def ^:private jdbc-config
+  {:connection-uri (get-jdbc-url)})
 
 (def ^:private migratus-config
   "数据库偏移配置"
   {:store :database
    :migration-dir "migrations/"
    :init-script "init.sql"
-   :db (or (get (System/getenv) "RBAC_DATABASE_URL")
-           (throw (Exception. "Please specify RBAC_DATABASE_URL.")))})
+   :db (get-jdbc-url)})
 
 (defmacro auto-migratus-funs [func-name]
   `(def ~(symbol (str "migratus-" func-name))
