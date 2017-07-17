@@ -20,5 +20,4 @@
 (defn reset-context! []
   (reset! context (init-context)))
 
-(defn context-add-role [context user role]
-  )
+(defn context-add-role [context user role] nil)

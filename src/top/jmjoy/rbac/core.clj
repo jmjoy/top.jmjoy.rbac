@@ -10,7 +10,7 @@
 (start-logging! {:level "debug" :console true})
 
 (defmacro auto-migratus-funs [func-name]
-  `(def ~(symbol (str "migratus-" func-name))
+  `(def ~(symbol (str "-migratus-" func-name))
      (partial ~(symbol "migratus.core" func-name) config/migratus-config)))
 
 ;; 自动生成迁移函数

@@ -13,16 +13,26 @@
                                 "create_time" create-time})]
     (User. id name create-time)))
 
-(defrecord Role [id name create-time parent-role])
+(defrecord Role [id name create-time])
 
-(defn role-add
-  ([name] (role-add name nil))
-  ([name parent-role]
+(defn role-add [name]
    (let [create-time (util/current-timestamp)
-         parent-id (if parent-role (:id parent-role) 0)
          [{id :generated_key}] (jdbc/insert!
                                 config/jdbc-config "role"
                                 {"name" name
+                                 "create_time" create-time})]
+     (Role. id name create-time)))
+
+(defrecord Node [id name create-time parent-node])
+
+(defn node-add
+  ([name] (node-add name nil))
+  ([name parent-node]
+   (let [create-time (util/current-timestamp)
+         parent-id (if parent-node (:id parent-node) 0)
+         [{id :generated_key}] (jdbc/insert!
+                                config/jdbc-config "node"
+                                {"name" name
                                  "parent_id" parent-id
                                  "create_time" create-time})]
-     (Role. id name create-time parent-role))))
+     (Node. id name create-time parent-node))))
