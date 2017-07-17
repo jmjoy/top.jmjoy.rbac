@@ -3,7 +3,21 @@
             [top.jmjoy.rbac.config :as config]
             [top.jmjoy.rbac.util :as util]))
 
-(defrecord User [id name create-time])
+(defprotocol ORM
+  (table-name [this]))
+
+(defprotocol MapIntoRecord
+  (map-> [this fields]))
+
+(defrecord User [id name create-time]
+  MapIntoRecord
+  (map-> [this {:keys [id name create_time]}]
+    (-> this
+        (update :id id)
+        (update :name name)
+        (update :create-time create_time)))
+  ORM
+  (table-name [this] "user"))
 
 (defn user-add [name]
   (let [create-time (util/current-timestamp)
@@ -36,3 +50,11 @@
                                  "parent_id" parent-id
                                  "create_time" create-time})]
      (Node. id name create-time parent-node))))
+
+(defn get-one-by-name [record-class name]
+  (let [sql (format
+             "select * from %s where name = '%s'"
+             (.table-name record) name)]
+    (if-let [result (first (jdbc/query config/jdbc-config sql))]
+      (.map-> record result))))
+

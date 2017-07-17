@@ -61,3 +61,12 @@
       (is (= 1 (:parent_id (first (jdbc/query
                                    config/jdbc-config
                                    "select * from node where id = 2"))))))))
+
+
+(deftest test-get-one-by-name
+  (is (nil? (get-one-by-name (map->User {}) "不存在的")))
+  (user-add "hehe")
+  (let [user (get-one-by-name (map->User {}))]
+    (is (instance? User user))
+    (is (= "hehe" (:name user)))))
+
