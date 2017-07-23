@@ -1,75 +1,88 @@
 (ns top.jmjoy.rbac.model
   (:require [clojure.java.jdbc :as jdbc]
-            [top.jmjoy.rbac.config :as config]
-            [top.jmjoy.rbac.util :as util]
+            [clojure.string :as str]
             [schema.core :as s]
-            [clojure.string :as str]))
+            [top.jmjoy.rbac.db :as db]
+            [top.jmjoy.rbac.util :as util]))
 
-(defmulti from-map identity)
+(defmulti table-name
+  "Get table name from record class."
+  #(if (class? %) identity (type %)))
 
-(defprotocol ORM
-  (table-name [this]))
+(defmulti from-map
+  "Construct a record from a map.
+  First argument is record type and second is a map."
+  (fn [cls result] cls))
 
-(defprotocol MapIntoRecord
-  (map-> [this fields]))
+(defmulti insert-record
+  "Convert a record to database insert map."
+  type)
 
-(defrecord User [id name create-time]
-  MapIntoRecord
-  (map-> [this {:keys [id name create_time]}]
-    (-> this
-        (update :id id)
-        (update :name name)
-        (update :create-time create_time)))
-  ORM
-  (table-name [this] "user"))
+(defn insert [record]
+  "insert a record to database and return id."
+  (let [[{id :generated_key}]
+        (db/insert! (table-name record)
+                    (insert-record record))]
+    id))
 
-(defmethod from-map User)
+(defn get-one-by-name
+  "Get a record by `name` from database.
+  Notice that record and table must has `name` field"
+  [cls name]
+  ;; validate
+  (s/validate s/Str name)
+  ;; get from db
+  (let [sql [(format "select * from %s where name = ?"
+                     (table-name cls)),
+             name]]
+    (if-let [result (db/query-one sql)]
+      (from-map cls result))))
 
-(defn user-add [name]
-  (let [create-time (util/current-timestamp)
-        [{id :generated_key}] (jdbc/insert!
-                               config/jdbc-config "user"
-                               {"name" name
-                                "create_time" create-time})]
-    (User. id name create-time)))
+;;==================================================
+
+(defrecord User [id name create-time])
+
+(defmethod table-name User [_] "user")
+
+(defmethod from-map User [_ result]
+  (let [{:keys [id name create_time]} result]
+    (->User id name create_time)))
+
+(defmethod insert-record User [record]
+  {"name" (:name record)
+   "create_time" (or (:create-time record) (util/current-timestamp))})
+
+;;==================================================
 
 (defrecord Role [id name create-time])
 
-(defn role-add [name]
-   (let [create-time (util/current-timestamp)
-         [{id :generated_key}] (jdbc/insert!
-                                config/jdbc-config "role"
-                                {"name" name
-                                 "create_time" create-time})]
-     (Role. id name create-time)))
+(defmethod table-name Role [_] "role")
+
+(defmethod from-map Role [_ result]
+  (let [{:keys [id name create_time]} result]
+    (->Role id name create_time)))
+
+(defmethod insert-record Role [record]
+  {"name" (:name record)
+   "create_time" (or (:create-time record) (util/current-timestamp))})
+
+;;==================================================
 
 (defrecord Node [id name create-time parent-node])
 
-(defn node-add
-  ([name] (node-add name nil))
-  ([name parent-node]
-   (let [create-time (util/current-timestamp)
-         parent-id (if parent-node (:id parent-node) 0)
-         [{id :generated_key}] (jdbc/insert!
-                                config/jdbc-config "node"
-                                {"name" name
-                                 "parent_id" parent-id
-                                 "create_time" create-time})]
-     (Node. id name create-time parent-node))))
+(defmethod table-name Node [_] "node")
 
+(defmethod from-map Node [_ result]
+  (let [{:keys [id name create_time parent_id]} result]
+    (->Node id name create_time parent_id)))
 
-(defn get-one-by-name
-  "根据record名字和name查找一条record。"
-  [record-class name]
-  (s/validate s/Str record-class)
-  (s/validate s/Str name)
-
-  (let [record ((resolve (symbol (str "map->" record-class))) {})
-        sql (format "select * from %s where name = '%s'"
-                    (.table-name record)
-                    name)]
-    (if-let [result-set (jdbc/query config/jdbc-config sql)]
-      (if-let [result (first result-set)]
-        (.map-> record result)))))
-
+(defmethod insert-record Node [record]
+  {"name" (:name record)
+   "create_time" (or (:create-time record) (util/current-timestamp))
+   "parent_id" (let [parent (:parent-node record)]
+                   (cond
+                     (nil? parent) 0
+                     (integer? parent) parent
+                     (instance? Node parent) (:id parent)
+                     :else (throw (Exception. "Unkonw type of parent-node."))))})
 
