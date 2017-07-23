@@ -64,3 +64,12 @@
     (let [{:keys [name parent_id]} (db/query-one (get-node-insert-sql 3))]
       (is (= "tester2" name))
       (is (= 999 parent_id)))))
+
+(deftest test-get-one-by-name
+  (testing "Test get user."
+    (db/insert! :user {:name "tester" :create_time 1000})
+    (let [user (get-one-by-name User "tester")]
+      (is (instance? User user))
+      (is (= (map->User {:id 1
+                         :name "tester"
+                         :create-time 1000}) user)))))

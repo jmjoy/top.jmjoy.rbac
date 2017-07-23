@@ -3,11 +3,12 @@
             [clojure.string :as str]
             [schema.core :as s]
             [top.jmjoy.rbac.db :as db]
-            [top.jmjoy.rbac.util :as util]))
+            [top.jmjoy.rbac.util :as util]
+            [clojure.tools.logging :as log]))
 
 (defmulti table-name
   "Get table name from record class."
-  #(if (class? %) identity (type %)))
+  #(if (class? %) % (type %)))
 
 (defmulti from-map
   "Construct a record from a map.
@@ -29,6 +30,7 @@
   "Get a record by `name` from database.
   Notice that record and table must has `name` field"
   [cls name]
+  (log/info cls)
   ;; validate
   (s/validate s/Str name)
   ;; get from db
