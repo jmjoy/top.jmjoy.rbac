@@ -11,6 +11,7 @@
   (jdbc/execute! config/jdbc-config (format "truncate `%s`" table-name)))
 
 (defn fixture-tables [f]
+  "清空表数据。"
   (truncate-table "user")
   (truncate-table "role")
   (truncate-table "node")
@@ -64,9 +65,9 @@
 
 
 (deftest test-get-one-by-name
-  (is (nil? (get-one-by-name (map->User {}) "不存在的")))
+  (is (nil? (get-one-by-name "User" "不存在的")))
   (user-add "hehe")
-  (let [user (get-one-by-name (map->User {}))]
+  (let [user (get-one-by-name "User" "hehe")]
     (is (instance? User user))
     (is (= "hehe" (:name user)))))
 

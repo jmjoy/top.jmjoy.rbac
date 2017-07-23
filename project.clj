@@ -11,7 +11,7 @@
                  [korma "0.4.3"]
                  [lein-dotenv "1.0.0"]
                  [spootnik/unilog "0.7.20"] ;; logging library
-                 ]
+                 [prismatic/schema "1.1.6"]]
   :main top.jmjoy.rbac.core
   :repl-options {:init-ns top.jmjoy.rbac.core}
   :plugins [[migratus-lein "0.5.0"]

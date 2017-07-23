@@ -1,7 +1,11 @@
 (ns top.jmjoy.rbac.model
   (:require [clojure.java.jdbc :as jdbc]
             [top.jmjoy.rbac.config :as config]
-            [top.jmjoy.rbac.util :as util]))
+            [top.jmjoy.rbac.util :as util]
+            [schema.core :as s]
+            [clojure.string :as str]))
+
+(defmulti from-map identity)
 
 (defprotocol ORM
   (table-name [this]))
@@ -18,6 +22,8 @@
         (update :create-time create_time)))
   ORM
   (table-name [this] "user"))
+
+(defmethod from-map User)
 
 (defn user-add [name]
   (let [create-time (util/current-timestamp)
@@ -51,10 +57,19 @@
                                  "create_time" create-time})]
      (Node. id name create-time parent-node))))
 
-(defn get-one-by-name [record-class name]
-  (let [sql (format
-             "select * from %s where name = '%s'"
-             (.table-name record) name)]
-    (if-let [result (first (jdbc/query config/jdbc-config sql))]
-      (.map-> record result))))
+
+(defn get-one-by-name
+  "根据record名字和name查找一条record。"
+  [record-class name]
+  (s/validate s/Str record-class)
+  (s/validate s/Str name)
+
+  (let [record ((resolve (symbol (str "map->" record-class))) {})
+        sql (format "select * from %s where name = '%s'"
+                    (.table-name record)
+                    name)]
+    (if-let [result-set (jdbc/query config/jdbc-config sql)]
+      (if-let [result (first result-set)]
+        (.map-> record result)))))
+
 
